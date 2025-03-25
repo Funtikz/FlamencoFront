@@ -1,0 +1,158 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+* {
+    margin: 0;
+    padding: 0;
+    font-family: "Montserrat", serif;
+    box-sizing: border-box;
+    border: none;
+    outline: none;
+    text-decoration: none;
+    list-style: none;
+}
+
+html {
+    font-size: 62.5%;
+}
+
+header {
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    background: #000000;
+    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, 0.5);
+    padding: 2rem 8%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+}
+
+header .logo {
+    display: flex; /* Располагает текст и иконку в одну строку */
+    align-items: center; /* Выравнивает по вертикали */
+    font-size: 3rem;
+    color: #fba8cd;
+    transition: 0.5s;
+}
+
+header .logo:hover {
+    transform: scale(1.2);
+}
+
+header .logo-icon {
+    width: 80px; /* Размер логотипа */
+    height: auto; /* Сохраняет пропорции */
+    margin-right: 1rem; /* Отступ между логотипом и текстом */
+}
+
+
+
+header .logo {
+    font-size: 3rem;
+    color: #fba8cd;
+    transition: 0.5s;
+}
+
+header .logo:hover {
+    transform: scale(1.2);
+}
+
+header .navbar a {
+    font-size: 1.7rem;
+    margin-left: 2rem;
+    color: #fff;
+    transition: 0.5s;
+}
+
+header .navbar a:hover {
+    color: #fba8cd;
+}
+
+header input {
+    display: none;
+}
+
+header label {
+    font-size: 3rem;
+    color: #fff;
+    cursor: pointer;
+    visibility: hidden;
+    opacity: 0;
+}
+
+@media (max-width: 1200px) {
+    html {
+        font-size: 55%;
+    }
+}
+
+@media (max-width: 1017px) {
+    header label {
+        visibility: visible;
+        opacity: 1;
+    }
+    header .navbar {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: #000;
+        padding: 1rem 2rem;
+        border-top: 1rem solid rgba(0, 0, 0, 0.1);
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, 0.5);
+        transform-origin: top;
+        transform: scale(0);
+        opacity: 0;
+    }
+    header .navbar a {
+        display: block;
+        margin: 2rem 0;
+        font-size: 1.8rem;
+    }
+    header input:checked ~ .navbar {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 450px) {
+    html {
+        font-size: 50%;
+    }
+}
+body {
+    font-family: Arial, sans-serif;
+    background-color: #3f3f3f;
+    background-image: url("C:\\Users\\user\\Desktop\\MyProjects\\Flamenco\\flamenco.jpg") no-repeat;
+    display: flex;
+    justify-content: center; /* Центруем по горизонтали */
+    align-items: center; /* Центруем по вертикали */
+    height: 100vh; /* Высота на весь экран */
+    margin: 0; /* Убираем отступы по умолчанию */
+}
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+.container {
+    text-align: center;
+    color:#fff;
+    font-size:75px;
+}
+.button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    background-color: #f6509a;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.button:hover {
+    background-color: #000;
+}

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flamenco CF</title>
+    <link
+      rel="icon"
+      href="assets/logoflamenco.ico"
+    />
+    <link rel="stylesheet" href="static/styles/registration.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header>
+    <a href="https://youtu.be/dQw4w9WgXcQ?si=g-C092dgSqNFv62h" target="_blank" class="logo">
+        <img src="assets/logoflamenco.png" alt="Лого клуба" class="logo-icon">
+        Flamenco CF
+    </a>
+    <input type="checkbox" name="menu" id="menu">
+    <label for="menu">|||</label>
+    <nav class="navbar">
+        <a href="news.html">Новости</a>
+        <a href="calendar.html">Календарь</a>
+        <a href="tickets.html">Билеты</a>
+        <a href="merch.html">Мерч</a>
+        <a href="about.html">О клубе</a>
+        <a href="basket.html">Корзина</a>
+        <a href="Login.html">Личный кабинет</a>
+    </nav>
+</header>
+
+<main>
+    <div class="form-container">
+        <h1>РЕГИСТРАЦИЯ</h1>
+        <div class="tabs">
+            <a href="Login.html" class="tab">ПО НОМЕРУ ТЕЛЕФОНА</a>
+            <a href="#" class="tab active">РЕГИСТРАЦИЯ</a>
+        </div>
+        <form>
+            <div class="input-group">
+                <input type="text" id="surname" placeholder="Фамилия" class="form-input" required>
+            </div>
+            <div class="input-group">
+                <input type="text" id="name" placeholder="Имя" class="form-input" required>
+            </div>
+            <div class="input-group">
+                <input type="text" id="patronymic" placeholder="Отчество" class="form-input" required>
+            </div>
+            <div class="input-group">
+                <input type="tel" id="phone" placeholder="Номер телефона" class="form-input" required>
+            </div>
+            <div class="input-group">
+                <input type="email" id="email" placeholder="Адрес электронной почты" class="form-input" required>
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" placeholder="Пароль" class="form-input" required>
+            </div>
+            <div class="input-group">
+                <input type="password" id="confirm-password" placeholder="Подтверждение пароля" class="form-input" required>
+            </div>
+            <button type="submit" class="submit-btn">зарегистрироваться</button>
+        </form>
+    </div>
+</main>
+<script>
+   document.addEventListener("DOMContentLoaded", function () {
+    document.querySelector(".submit-btn").addEventListener("click", async function (event) {
+        event.preventDefault();
+        
+        const surname = document.getElementById("surname").value.trim();
+        const name = document.getElementById("name").value.trim();
+        const patronymic = document.getElementById("patronymic").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value.trim();
+        const confirmPassword = document.getElementById("confirm-password").value.trim();
+
+        if (!surname || !name || !patronymic || !phone || !email || !password || !confirmPassword) {
+            alert("Все поля должны быть заполнены");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            alert("Пароли не совпадают");
+            return;
+        }
+
+        const requestData = {
+            lastName: surname,
+            firstName: name,
+            phoneNumber: phone,
+            email: email,
+            password: password,
+            confirmPassword: confirmPassword,
+            roles: ["USER"]
+        };
+
+        try {
+            const response = await fetch("http://localhost:8080/api/auth/registration", {
+                method: "POST",
+                credentials: "include", 
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (response.ok) {
+                alert("Регистрация успешна! Теперь вы можете войти в систему.");
+                window.location.href = "Login.html";
+            } else {
+                const errorData = await response.json();
+                alert(errorData.message || "Ошибка регистрации");
+            }
+        } catch (error) {
+            console.error("Ошибка запроса:", error);
+            alert("Не удалось отправить запрос. Попробуйте позже.");
+        }
+    });
+});
+
+</script>
+</body>
+</html>

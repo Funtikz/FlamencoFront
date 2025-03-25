@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flamenco CF</title>
+    <link rel="stylesheet" href="static/styles/style-buyaticket.css" />
+    <link
+      rel="icon"
+      href="C:\Users\user\Desktop\MyProjects\Flamenco\assets\logoflamenco.ico"
+    />
+  </head>
+
+  <body>
+    <header>
+      <a href="https://youtu.be/dQw4w9WgXcQ?si=g-C092dgSqNFv62h" target="_blank" class="logo">
+        <img
+          src="C:\Users\user\Desktop\MyProjects\Flamenco\assets\logoflamenco.png"
+          alt="Лого клуба"
+          class="logo-icon"
+        />
+        Flamenco CF
+      </a>
+      <input type="checkbox" name="menu" id="menu" />
+      <label for="menu">|||</label>
+      <nav class="navbar">
+        <a href="news.html">Новости</a>
+        <a href="calendar.html">Календарь</a>
+        <a href="tickets.html">Билеты</a>
+        <a href="merch.html">Мерч</a>
+        <a href="about.html">О клубе</a>
+        <a href="basket.html">Корзина</a>
+        <a href="Login.html">Личный кабинет</a>
+      </nav>
+    </header>
+    <img
+      src="C:\Users\user\Desktop\MyProjects\Flamenco\assets\StadiumScheme.jpg"
+      alt="Стадион"
+      class="stadium-image"
+    />
+    <main>
+      <h1>Выберите место на стадионе</h1>
+
+      <div class="seat-selection">
+        <label for="tribune">Трибуна:</label>
+        <select id="tribune" onchange="updateSectorOptions()">
+          <option value="">-- Выберите трибуну --</option>
+          <option value="blue">Синяя</option>
+          <option value="yellow">Жëлтая</option>
+          <option value="red">Красная</option>
+          <option value="green">Зелëная</option>
+        </select>
+
+        <label for="sector">Сектор:</label>
+        <select id="sector" disabled>
+          <option value="">-- Выберите сектор --</option>
+        </select>
+
+        <label for="row">Ряд:</label>
+        <select id="row">
+          <option value="">-- Выберите ряд --</option>
+          <script>
+            for (let i = 1; i <= 20; i++) {
+              document.write(`<option value="${i}">${i}</option>`);
+            }
+          </script>
+        </select>
+
+        <label for="seat">Место:</label>
+        <select id="seat">
+          <option value="">-- Выберите место --</option>
+          <script>
+            for (let i = 1; i <= 50; i++) {
+              document.write(`<option value="${i}">${i}</option>`);
+            }
+          </script>
+        </select>
+        <div class="button-container">
+            <button id="purchase-button" onclick="buyTicket()">Купить билет</button>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      function updateSectorOptions() {
+        const tribune = document.getElementById("tribune").value;
+        const sectorSelect = document.getElementById("sector");
+        sectorSelect.innerHTML =
+          '<option value="">-- Выберите сектор --</option>';
+
+        let sectors = [];
+        if (tribune === "blue" || tribune === "red") {
+          sectors = [1, 2, 3, 4, 5, 6];
+        } else if (tribune === "yellow" || tribune === "green") {
+          sectors = [1, 2, 3];
+        }
+
+        sectors.forEach((sector) => {
+          sectorSelect.innerHTML += `<option value="${sector}">${sector}</option>`;
+        });
+
+        sectorSelect.disabled = sectors.length === 0;
+      }
+      function buyTicket() {
+            // Получаем значения выбранных параметров
+            const tribune = document.getElementById("tribune").value;
+            const sector = document.getElementById("sector").value;
+            const row = document.getElementById("row").value;
+            const seat = document.getElementById("seat").value;
+
+            if (tribune && sector && row && seat) {
+                alert(`Вы купили билет на ${tribune} трибуне, сектор ${sector}, ряд ${row}, место ${seat}.`);
+            } else {
+                alert('Пожалуйста, выберите все параметры билета.');
+            }
+        }
+    </script>
+  </body>
+</html>
