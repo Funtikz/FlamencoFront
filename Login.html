@@ -4,17 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flamenco CF</title>
-    <link
-      rel="icon"
-      href="C:\Users\user\Desktop\MyProjects\Flamenco\assets\logoflamenco.ico"
-    />
+    <link rel="icon" href="assets/logoflamenco.ico" />
     <link rel="stylesheet" href="static/styles/login.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <header>
     <a href="https://youtu.be/dQw4w9WgXcQ?si=g-C092dgSqNFv62h" target="_blank" class="logo">
-        <img src="C:\Users\user\Desktop\MyProjects\Flamenco\assets\logoflamenco.png" alt="Лого клуба" class="logo-icon">
+        <img src="assets/logoflamenco.png" alt="Лого клуба" class="logo-icon">
         Flamenco CF
     </a>
     <input type="checkbox" name="menu" id="menu">
@@ -34,14 +31,13 @@
     <div class="form-container">
         <h1>ВХОД</h1>
         <div class="tabs">
-            <a href="EmailLogin.html" class="tab active">ПО ЭЛЕКТРОННОЙ ПОЧТЕ</a>
-            <a href="registration.html" class="tab">РЕГИСТРАЦИЯ</a>
+            <a href="http://localhost:63343/flamenco/registration.html?_ijt=hut0hoo3o9od0slom427vanpr2&_ij_reload=RELOAD_ON_SAVE" class="tab">РЕГИСТРАЦИЯ</a>
         </div>
         <form>
             <label for="phone" class="form-label">ВОЙТИ ПО НОМЕРУ ТЕЛЕФОНА</label>
             <div class="input-group">
                 <div class="country-code">
-                    <img src="C:\Users\user\Desktop\MyProjects\Flamenco\assets\square.png" alt="Russia Flag" class="country-flag">
+                    <img src="assets/square.png" alt="Russia Flag" class="country-flag">
                     +7
                 </div>
                 <input type="tel" id="phone" placeholder="Номер телефона" class="form-input">
@@ -59,14 +55,73 @@
         </form>
     </div>
 </main>
+
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", async function () {
+        // Проверка авторизации — если да, перенаправляем
+        try {
+            const authCheck = await fetch("http://localhost:8080/api/auth/current-user", {
+                method: "GET",
+                credentials: "include"
+            });
+
+            if (authCheck.ok) {
+                window.location.href = "lk.html";
+                return;
+            }
+        } catch (err) {
+            console.warn("Пользователь не авторизован или сервер не отвечает.");
+        }
+
+        // Обработка email из параметров URL
+        const params = new URLSearchParams(window.location.search);
+        const emailFromQuery = params.get("email");
+        if (emailFromQuery) {
+            const emailField = document.getElementById("email");
+            if (emailField) emailField.value = emailFromQuery;
+        }
+
+        // Обработка логина
         document.querySelector(".submit-btn").addEventListener("click", async function (event) {
             event.preventDefault();
-            const phone = document.getElementById("phone").value.trim();
-            const password = document.getElementById("password").value.trim();
+
+            const userInput = document.getElementById("phone").value.trim().replace(/\D/g, "");
+            const phone = "+7" + userInput;
+            const password = document.querySelector('input[type="password"]').value.trim();
+
+            if (!phone || !password) {
+                alert("Пожалуйста, заполните все поля.");
+                return;
+            }
+
+            const loginData = {
+                phoneNumber: phone,
+                password: password
+            };
+
+            try {
+                const response = await fetch("http://localhost:8080/api/auth/login", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(loginData)
+                });
+
+                if (response.ok) {
+                    window.location.href = "merch.html";
+                } else {
+                    const error = await response.json();
+                    alert(error.message || "Ошибка входа. Проверьте номер и пароль.");
+                }
+            } catch (err) {
+                console.error("Ошибка сети:", err);
+                alert("Не удалось выполнить запрос. Попробуйте позже.");
+            }
         });
     });
 </script>
+
 </body>
 </html>

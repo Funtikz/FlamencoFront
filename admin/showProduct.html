@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Категории товаров</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            display: flex;
+            background-color: #f4f7fa;
+        }
+
+        nav {
+            width: 240px;
+            background-color: #2c3e50;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            padding-top: 30px;
+            padding-left: 20px;
+        }
+
+        nav a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 15px 25px;
+            font-size: 18px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            background-color: #16a085;
+        }
+
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .category-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .category-item {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .category-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .category-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .category-item p {
+            font-size: 18px;
+            color: #34495e;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="javascript:void(0);" onclick="showAllNews()">Просмотр всех новостей</a>
+    <a href="javascript:void(0);" onclick="showCreateNews()">Создать новость</a>
+    <a href="javascript:void(0);" onclick="showAllPlayers()">Просмотр всех игроков</a>
+    <a href="javascript:void(0);" onclick="showCreatePlayer()">Создать игрока</a>
+    <a href="javascript:void(0);" onclick="showCreateProduct()">Создать продукт</a>
+    <a href="javascript:void(0);" onclick="showCategoryProduct()">Посмотреть продукты</a>
+</nav>
+
+<div class="content">
+    <h1>Выберите категорию товаров</h1>
+    <div id="category-list" class="category-list"></div>
+</div>
+
+<script>
+    const categories = [
+        { name: "Футболки", image: "../assets/Футболки.png", id: "T_SHIRTS" },
+        { name: "Кепки", image: "../assets/Кепки.png", id: "CAPS" },
+        { name: "Худи", image: "../assets/Худи.png", id: "HOODIES" },
+        { name: "Шопперы", image: "../assets/Шопперы.png", id: "SHOPPERS" },
+        { name: "Шарфы", image: "../assets/scarfs/Шарфы.jpg", id: "SCARFS" },
+        { name: "Значки", image: "../assets/Значки.png", id: "BADGES" },
+        { name: "Брелки", image: "../assets/Брелки.png", id: "TRINKETS" },
+        { name: "Постеры", image: "../assets/Постеры.png", id: "POSTERS" }
+    ];
+
+    function showCategories() {
+        const container = document.getElementById('category-list');
+        container.innerHTML = '';
+
+        categories.forEach(category => {
+            const item = document.createElement('div');
+            item.className = 'category-item';
+            item.innerHTML = `
+                <a href="products.html?type=${category.id}">
+                    <img src="${category.image}" alt="${category.name}">
+                    <p>${category.name}</p>
+                </a>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+
+    // Функция для перехода на страницу "Все игроки"
+    function showAllPlayers() {
+        window.location.href = "showPlayer.html"; // Укажите нужный URL для страницы с полным списком игроков
+    }
+
+    // Функция для перехода на страницу "Создать игрока"
+    function showCreatePlayer() {
+        window.location.href = "playerCreate.html"; // Укажите нужный URL для страницы создания игрока
+    }
+
+    // Функции для перехода на другие страницы
+    function showAllNews() {
+        window.location.href = "showNews.html";
+    }
+
+    function showCreateNews() {
+        window.location.href = "createNews.html";
+    }
+
+    function showCreateProduct() {
+        window.location.href = "createProduct.html";
+    }
+
+    function showCategoryProduct() {
+        window.location.href = "showProduct.html";
+    }
+
+    showCategories();
+</script>
+
+</body>
+</html>

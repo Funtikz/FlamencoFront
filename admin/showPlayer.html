@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Управление игроками</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            display: flex;
+            background-color: #f4f7fa;
+        }
+
+        nav {
+            width: 240px;
+            background-color: #2c3e50;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            padding-top: 30px;
+            padding-left: 20px;
+        }
+
+        nav a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 15px 25px;
+            font-size: 18px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            background-color: #16a085;
+        }
+
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .player-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .player-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .player-card img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .player-card h3 {
+            margin: 5px 0;
+            font-size: 20px;
+            color: #34495e;
+        }
+
+        .player-card p {
+            color: #7f8c8d;
+            margin: 2px 0;
+        }
+
+        .actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .actions button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .update-btn {
+            background-color: #3498db;
+            color: white;
+        }
+
+        #updateModal input, #updateModal select {
+            display: block;
+            width: 100%;
+            margin-bottom: 12px;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        #updateModal button[type="submit"] {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+    </style>
+</head>
+<body>
+<nav>
+    <a href="javascript:void(0);" onclick="showAllNews()">Просмотр всех новостей</a>
+    <a href="javascript:void(0);" onclick="showCreateNews()">Создать новость</a>
+    <a href="javascript:void(0);" onclick="showAllPlayers()">Просмотр всех игроков</a>
+    <a href="javascript:void(0);" onclick="showCreatePlayer()">Создать игрока</a>
+    <a href="javascript:void(0);" onclick="showCreateProduct()">Создать продукт</a>
+    <a href="javascript:void(0);" onclick="showCategoryProduct()">Посмотреть продукты</a>
+</nav>
+<div class="content">
+    <h1>Список игроков</h1>
+    <div id="player-list" class="player-list"></div>
+</div>
+
+<!-- Модальное окно -->
+<div id="updateModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:white; padding:30px; border-radius:10px; width:400px; position:relative;">
+        <button onclick="closeModal()" style="position:absolute; top:10px; right:10px;">✖</button>
+        <h2>Обновить игрока</h2>
+        <form id="updateForm">
+            <input type="hidden" id="updateId">
+            <input type="text" id="updateFirstname" placeholder="Имя" required>
+            <input type="text" id="updateLastname" placeholder="Фамилия" required>
+            <select id="updateRole" required onchange="togglePositionField()">
+                <option value="FOOTBALLER">Футболист</option>
+                <option value="COACH">Тренер</option>
+            </select>
+            <select id="updatePosition">
+                <option value="">— Позиция —</option>
+                <option value="GOALKEEPER">Вратарь</option>
+                <option value="DEFENDER">Защитник</option>
+                <option value="MIDFIELDER">Полузащитник</option>
+                <option value="FORWARD">Нападающий</option>
+            </select>
+            <input type="file" id="updateImage" accept="image/*" required>
+            <button type="submit">Сохранить</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const playersUrl = 'http://localhost:8080/api/players';
+
+    async function fetchPlayers() {
+        try {
+            const response = await fetch(playersUrl, { credentials: 'include' });
+            if (!response.ok) throw new Error("Ошибка загрузки");
+
+            const players = await response.json();
+            const container = document.getElementById('player-list');
+            container.innerHTML = '';
+
+            for (const player of players) {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+
+                const img = await fetchImage(player.image?.id);
+
+                card.innerHTML = `
+                    <img src="${img}" alt="Фото игрока">
+                    <h3>${player.firstname} ${player.lastname}</h3>
+                    <p><strong>Роль:</strong> ${player.role}</p>
+                    ${player.role === 'FOOTBALLER' && player.playerPosition ? `<p><strong>Позиция:</strong> ${player.playerPosition}</p>` : ''}
+                    <div class="actions">
+                        <button class="delete-btn" onclick="deletePlayer(${player.id})">Удалить</button>
+                        <button class="update-btn" onclick='openUpdateModal(${JSON.stringify(player)})'>Обновить</button>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            }
+        } catch (err) {
+            alert('Ошибка при получении игроков');
+            console.error(err);
+        }
+    }
+
+    async function fetchImage(imageId) {
+        if (!imageId) return 'https://via.placeholder.com/300';
+        const response = await fetch(`http://localhost:8080/api/image/${imageId}`, {
+            credentials: 'include'
+        });
+        if (response.ok) {
+            const base64 = await response.json();
+            return `data:image/jpeg;base64,${base64[0]}`;
+        }
+        return 'https://via.placeholder.com/300';
+    }
+
+    async function deletePlayer(id) {
+        if (!confirm('Удалить игрока?')) return;
+
+        const res = await fetch(`${playersUrl}/${id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+
+        if (res.ok) {
+            alert('Игрок удален');
+            fetchPlayers();
+        } else {
+            alert('Ошибка при удалении');
+        }
+    }
+
+    function openUpdateModal(player) {
+        document.getElementById('updateId').value = player.id;
+        document.getElementById('updateFirstname').value = player.firstname;
+        document.getElementById('updateLastname').value = player.lastname;
+        document.getElementById('updateRole').value = player.role;
+        document.getElementById('updatePosition').value = player.playerPosition || '';
+        togglePositionField();
+        document.getElementById('updateModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('updateModal').style.display = 'none';
+    }
+
+    function togglePositionField() {
+        const role = document.getElementById('updateRole').value;
+        const positionField = document.getElementById('updatePosition');
+        positionField.style.display = role === 'FOOTBALLER' ? 'block' : 'none';
+    }
+
+    document.getElementById('updateForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const id = document.getElementById('updateId').value;
+        const formData = new FormData();
+        formData.append('firstname', document.getElementById('updateFirstname').value);
+        formData.append('lastname', document.getElementById('updateLastname').value);
+        formData.append('role', document.getElementById('updateRole').value);
+        const position = document.getElementById('updatePosition').value;
+        if (position) {
+            formData.append('playerPosition', position);
+        }
+        formData.append('image', document.getElementById('updateImage').files[0]);
+
+        const res = await fetch(`${playersUrl}/${id}`, {
+            method: 'PUT',
+            body: formData,
+            credentials: 'include'
+        });
+
+        if (res.ok) {
+            alert('Игрок обновлён');
+            closeModal();
+            fetchPlayers();
+        } else {
+            alert('Ошибка при обновлении');
+        }
+    });
+
+
+    // Функция для перехода на страницу "Все игроки"
+    function showAllPlayers() {
+        window.location.href = "showPlayer.html"; // Укажите нужный URL для страницы с полным списком игроков
+    }
+
+    // Функция для перехода на страницу "Создать игрока"
+    function showCreatePlayer() {
+        window.location.href = "playerCreate.html"; // Укажите нужный URL для страницы создания игрока
+    }
+
+    // Функции для перехода на другие страницы
+    function showAllNews() {
+        window.location.href = "showNews.html";
+    }
+
+    function showCreateNews() {
+        window.location.href = "createNews.html";
+    }
+
+    function showCreateProduct() {
+        window.location.href = "createProduct.html";
+    }
+
+    function showCategoryProduct() {
+        window.location.href = "showProduct.html";
+    }
+
+    fetchPlayers();
+</script>
+
+</body>
+</html>

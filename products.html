@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Товары | Flamenco CF</title>
+    <link rel="stylesheet" href="../static/styles/style-merch.css">
+    <link rel="icon" href="../assets/logoflamenco.ico">
+    <style>
+        .product {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            margin: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: 220px;
+            box-sizing: border-box;
+        }
+
+        .product img {
+            width: 100%;
+            height: auto;
+            max-width: 200px;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .product p, .product b {
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .product-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .button {
+            text-decoration: none;
+            color: inherit;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <a href="https://youtu.be/dQw4w9WgXcQ?si=g-C092dgSqNFv62h" target="_blank" class="logo">
+        <img src="../assets/logoflamenco.ico" alt="Лого клуба" class="logo-icon">
+        Flamenco CF
+    </a>
+    <input type="checkbox" name="menu" id="menu">
+    <label for="menu">|||</label>
+    <nav class="navbar">
+        <a href="news.html">Новости</a>
+        <a href="calendar.html">Календарь</a>
+        <a href="tickets.html">Билеты</a>
+        <a href="merch.html">Мерч</a>
+        <a href="about.html">О клубе</a>
+        <a href="basket.html">Корзина</a>
+        <a href="Login.html">Личный кабинет</a>
+    </nav>
+</header>
+
+<div class="container product-container" id="product-container">
+    <!-- Продукты будут загружаться сюда -->
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const category = urlParams.get('category');
+
+    function loadProductImages(productId) {
+        return fetch(`http://localhost:8080/api/products/${productId}/images`, {
+            method: 'GET',
+            credentials: 'include',
+        })
+            .then(response => response.json())
+            .catch(error => {
+                console.error('Ошибка при загрузке изображений:', error);
+                return [];
+            });
+    }
+
+    function loadProducts(category) {
+        const url = `http://localhost:8080/api/products/by-type?type=${category}`;
+
+        fetch(url, {
+            method: 'GET',
+            credentials: 'include'
+        })
+            .then(response => response.json())
+            .then(products => {
+                const container = document.getElementById('product-container');
+
+                if (products.length > 0) {
+                    products.forEach(product => {
+                        const productElement = document.createElement('a');
+                        productElement.classList.add('button', 'product');
+                        productElement.href = `product-detail.html?id=${product.id}`;
+
+                        const name = document.createElement('p');
+                        name.textContent = product.name;
+
+                        const price = document.createElement('b');
+                        price.textContent = `${product.discountedPrice} рублей`;
+
+                        loadProductImages(product.id).then(images => {
+                            const img = document.createElement('img');
+
+                            if (images.length > 0) {
+                                img.src = `data:image/png;base64,${images[0]}`;
+                                img.alt = `${product.name} image`;
+                            } else {
+                                img.src = '../assets/default-product.jpg';
+                                img.alt = 'Изображение не доступно';
+                            }
+
+                            productElement.appendChild(img);
+                        });
+
+                        productElement.appendChild(name);
+                        productElement.appendChild(price);
+                        container.appendChild(productElement);
+                    });
+                } else {
+                    container.innerHTML = '<p>Товары не найдены в этой категории.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при загрузке товаров:', error);
+                document.getElementById('product-container').innerHTML = '<p>Произошла ошибка при загрузке товаров.</p>';
+            });
+    }
+
+    if (category) {
+        loadProducts(category);
+    } else {
+        document.getElementById('product-container').innerHTML = '<p>Вы не выбрали категорию товаров.</p>';
+    }
+</script>
+</body>
+</html>

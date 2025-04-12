@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Управление новостями</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            display: flex;
+            background-color: #f4f7fa;
+        }
+
+        /* Боковое меню */
+        nav {
+            width: 240px;
+            background-color: #2c3e50;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            padding-top: 30px;
+            padding-left: 20px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        nav a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 15px 25px;
+            font-size: 18px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            background-color: #16a085;
+        }
+
+        /* Основной контент */
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        /* Список новостей */
+        .news-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .news-item {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .news-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .news-item h3 {
+            font-size: 20px;
+            color: #34495e;
+        }
+
+        .news-item p {
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+
+        .news-actions {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .news-actions button {
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: none;
+        }
+
+        .delete-button {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .delete-button:hover {
+            background-color: #c0392b;
+        }
+
+        .image-container {
+            margin-top: 10px;
+        }
+
+        .image-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 40px;
+        }
+
+        /* Стили для формы обновления */
+        #update-form {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #update-form h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        #update-form input,
+        #update-form textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        #update-form button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #16a085;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #update-form button:hover {
+            background-color: #1abc9c;
+        }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="javascript:void(0);" onclick="showAllNews()">Просмотр всех новостей</a>
+    <a href="javascript:void(0);" onclick="showCreateNews()">Создать новость</a>
+    <a href="javascript:void(0);" onclick="showAllPlayers()">Просмотр всех игроков</a>
+    <a href="javascript:void(0);" onclick="showCreatePlayer()">Создать игрока</a>
+    <a href="javascript:void(0);" onclick="showCreateProduct()">Создать продукт</a>
+    <a href="javascript:void(0);" onclick="showCategoryProduct()">Посмотреть продукты</a>
+</nav>
+<!-- Основной контент -->
+<div class="content">
+    <h1>Управление новостями</h1>
+
+    <!-- Список новостей -->
+    <div id="news-list" class="news-list"></div>
+
+    <!-- Форма обновления новости -->
+    <div id="update-form" style="display: none;">
+        <h2>Обновление новости</h2>
+        <form id="update-news-form" enctype="multipart/form-data">
+            <input type="text" id="update-heading" name="heading" required placeholder="Заголовок">
+            <textarea id="update-description" name="description" required placeholder="Описание"></textarea>
+            <input type="file" id="update-image" name="newImage">
+            <button type="submit">Обновить</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const apiUrl = 'http://localhost:8080/api/news';
+
+    // Получить изображение для новости по ID изображения из объекта 'images'
+    async function fetchImage(images) {
+        const imageId = images.id; // Используем ID из поля 'images'
+        const imageUrl = `http://localhost:8080/api/image/${imageId}`; // Запрос по ID изображения
+        const response = await fetch(imageUrl, {
+            credentials: 'include',
+        });
+        if (response.ok) {
+            const imageBase64 = await response.json();
+            return `data:image/jpeg;base64,${imageBase64[0]}`; // Возвращаем изображение в base64
+        } else {
+            return 'https://via.placeholder.com/300'; // Заглушка, если изображение не найдено
+        }
+    }
+
+    // Функция для отображения всех новостей
+    async function fetchNews() {
+        const response = await fetch(apiUrl, {
+            credentials: 'include',  // Передаем куки с запросом
+        });
+        if (response.ok) {
+            const newsList = await response.json();
+            const newsContainer = document.getElementById('news-list');
+            newsContainer.innerHTML = '';
+            newsList.forEach(news => {
+                const newsItem = document.createElement('div');
+                newsItem.className = 'news-item';
+
+                // Запрос на получение изображения
+                fetchImage(news.images).then(imageUrl => {
+                    newsItem.innerHTML = `
+                    <h3>${news.heading}</h3>
+                    <p>${news.description}</p>
+                    <p><strong>Дата:</strong> ${news.date}</p>
+                    <div class="image-container">
+                        <img src="${imageUrl}" alt="Image for ${news.heading}" />
+                    </div>
+                    <div class="news-actions">
+                        <button class="delete-button" onclick="deleteNews(${news.id})">Удалить</button>
+                        <button class="update-button" onclick="showUpdateForm(${news.id}, '${news.heading}', '${news.description}')">Обновить</button>
+                    </div>
+                `;
+                    newsContainer.appendChild(newsItem);
+                });
+            });
+        } else {
+            alert('Ошибка при загрузке новостей');
+        }
+    }
+
+    // Удалить новость по ID
+    async function deleteNews(id) {
+        const response = await fetch(`${apiUrl}/${id}`, {
+            method: 'DELETE',
+            credentials: 'include',
+        });
+
+        if (response.ok) {
+            alert('Новость удалена');
+            fetchNews(); // Обновить список новостей после удаления
+        } else {
+            alert('Ошибка при удалении новости');
+        }
+    }
+
+    // Показать форму для обновления новости
+    function showUpdateForm(id, heading, description) {
+        const updateForm = document.getElementById('update-form');
+        document.getElementById('update-heading').value = heading;
+        document.getElementById('update-description').value = description;
+        updateForm.style.display = 'block';
+
+        // Добавляем обработчик для формы
+        const updateNewsForm = document.getElementById('update-news-form');
+        updateNewsForm.onsubmit = async function (event) {
+            event.preventDefault();
+            const heading = document.getElementById('update-heading').value;
+            const description = document.getElementById('update-description').value;
+            const image = document.getElementById('update-image').files[0];  // Получаем файл изображения (если выбран)
+
+            const formData = new FormData();
+            formData.append('heading', heading);
+            formData.append('description', description);
+            if (image) {
+                formData.append('newImage', image);
+            }
+
+            const response = await fetch(`${apiUrl}/${id}`, {
+                method: 'PUT',
+                body: formData,
+                credentials: 'include',  // Передаем куки с запросом
+            });
+
+            if (response.ok) {
+                alert('Новость обновлена');
+                fetchNews(); // Обновить список новостей после обновления
+                updateForm.style.display = 'none'; // Скрыть форму
+            } else {
+                alert('Ошибка при обновлении новости');
+            }
+        };
+    }
+    // Функция для перехода на страницу "Все игроки"
+    function showAllPlayers() {
+        window.location.href = "showPlayer.html"; // Укажите нужный URL для страницы с полным списком игроков
+    }
+
+    // Функция для перехода на страницу "Создать игрока"
+    function showCreatePlayer() {
+        window.location.href = "playerCreate.html"; // Укажите нужный URL для страницы создания игрока
+    }
+
+    // Функции для перехода на другие страницы
+    function showAllNews() {
+        window.location.href = "showNews.html";
+    }
+
+    function showCreateNews() {
+        window.location.href = "createNews.html";
+    }
+
+    function showCreateProduct() {
+        window.location.href = "createProduct.html";
+    }
+
+    function showCategoryProduct() {
+        window.location.href = "showProduct.html";
+    }
+
+
+    // Загрузить новости сразу при загрузке страницы
+    fetchNews();
+</script>
+
+</body>
+</html>

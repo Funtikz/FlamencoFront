@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Управление продуктами</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            display: flex;
+            background-color: #f4f7fa;
+        }
+
+        nav {
+            width: 240px;
+            background-color: #2c3e50;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            padding-top: 30px;
+            padding-left: 20px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        nav a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 15px 25px;
+            font-size: 18px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            background-color: #16a085;
+        }
+
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        #create-form input, #create-form textarea, #create-form select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #create-form button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #create-form button:hover {
+            background-color: #2980b9;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 40px;
+        }
+
+        .size-select {
+            display: none;
+        }
+
+        .size-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .size-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .size-item select, .size-item input {
+            margin-right: 10px;
+        }
+
+        .size-item button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .size-item button:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="javascript:void(0);" onclick="showAllNews()">Просмотр всех новостей</a>
+    <a href="javascript:void(0);" onclick="showCreateNews()">Создать новость</a>
+    <a href="javascript:void(0);" onclick="showAllPlayers()">Просмотр всех игроков</a>
+    <a href="javascript:void(0);" onclick="showCreatePlayer()">Создать игрока</a>
+    <a href="javascript:void(0);" onclick="showCreateProduct()">Создать продукт</a>
+    <a href="javascript:void(0);" onclick="showCategoryProduct()">Посмотреть продукты</a>
+</nav>
+
+<div class="content">
+    <h1>Управление продуктами</h1>
+
+    <div id="create-form">
+        <h2>Создание продукта</h2>
+        <input type="text" id="product-name" placeholder="Название продукта" required>
+        <textarea id="product-description" placeholder="Описание продукта" required></textarea>
+        <input type="number" id="product-price" placeholder="Цена" required>
+
+        <!-- Поле для скидки -->
+        <input type="number" id="product-discount" placeholder="Скидка (%)" required>
+
+        <select id="product-type" onchange="toggleSizeField()">
+            <option value="Футболки">Футболки</option>
+            <option value="Кепки">Кепки</option>
+            <option value="Худи">Худи</option>
+            <option value="Шопперы">Шопперы</option>
+            <option value="Шарфы">Шарфы</option>
+            <option value="Значки">Значки</option>
+            <option value="Брелки">Брелки</option>
+            <option value="Постеры">Постеры</option>
+        </select>
+
+        <!-- Поле для добавления нескольких размеров -->
+        <div id="size-field" class="size-select">
+            <label for="product-sizes">Размеры:</label>
+            <div id="product-sizes" class="size-list">
+                <!-- Размеры будут добавляться сюда -->
+            </div>
+            <button type="button" onclick="addSizeField()">Добавить размер</button>
+        </div>
+
+        <input type="file" id="product-images" accept="image/*" multiple>
+        <button onclick="createProduct()">Создать продукт</button>
+    </div>
+</div>
+
+<script>
+    const apiUrl = 'http://localhost:8080/api/products/create';
+
+    const productTypeMapping = {
+        "Футболки": "T_SHIRTS",
+        "Кепки": "CAPS",
+        "Худи": "HOODIES",
+        "Шопперы": "SHOPPERS",
+        "Шарфы": "SCARFS",
+        "Значки": "BADGES",
+        "Брелки": "TRINKETS",
+        "Постеры": "POSTERS"
+    };
+
+    const sizeMapping = {
+        "XS": "XS",
+        "S": "S",
+        "M": "M",
+        "L": "L",
+        "XL": "XL",
+        "XXL": "XXL"
+    };
+
+    let sizeCounter = 0;
+
+    function addSizeField() {
+        const sizeList = document.getElementById('product-sizes');
+        const sizeItem = document.createElement('div');
+        sizeItem.classList.add('size-item');
+        sizeItem.setAttribute('id', `size-item-${sizeCounter}`);
+
+        sizeItem.innerHTML = `
+            <select id="product-size-${sizeCounter}">
+                <option value="XS">XS</option>
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+                <option value="XXL">XXL</option>
+            </select>
+            <input type="number" id="product-quantity-${sizeCounter}" placeholder="Количество" required>
+            <button type="button" onclick="removeSizeField(${sizeCounter})">Удалить</button>
+        `;
+        sizeList.appendChild(sizeItem);
+        sizeCounter++;
+    }
+
+    function removeSizeField(index) {
+        const sizeItem = document.getElementById(`size-item-${index}`);
+        sizeItem.remove();
+    }
+
+    async function createProduct() {
+        const name = document.getElementById('product-name').value;
+        const description = document.getElementById('product-description').value;
+        const price = document.getElementById('product-price').value;
+        const discountPercentage = document.getElementById('product-discount').value;
+        const type = document.getElementById('product-type').value;
+        const images = document.getElementById('product-images').files;
+
+        const variants = [];
+        for (let i = 0; i < sizeCounter; i++) {
+            const size = document.getElementById(`product-size-${i}`).value;
+            const qty = document.getElementById(`product-quantity-${i}`).value;
+            if (size && qty) {
+                variants.push({
+                    size: sizeMapping[size],
+                    quantity: qty
+                });
+            }
+        }
+
+        const formData = new FormData();
+        formData.append('productData', JSON.stringify({
+            name: name,
+            description: description,
+            productType: productTypeMapping[type],
+            originalPrice: parseFloat(price),
+            discountPercentage: parseFloat(discountPercentage) || 0,
+            variants: variants
+        }));
+
+        for (let i = 0; i < images.length; i++) {
+            formData.append('images', images[i]);
+        }
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                alert('Продукт успешно создан');
+            } else {
+                alert('Ошибка при создании продукта');
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+        }
+    }
+
+    function toggleSizeField() {
+        const productType = document.getElementById('product-type').value;
+        const sizeField = document.getElementById('size-field');
+
+        if (productType === 'Футболки' || productType === 'Худи' || productType === 'Кепки') {
+            sizeField.style.display = 'block';
+        } else {
+            sizeField.style.display = 'none';
+        }
+    }
+    // Функция для перехода на страницу "Все игроки"
+    function showAllPlayers() {
+        window.location.href = "showPlayer.html"; // Укажите нужный URL для страницы с полным списком игроков
+    }
+
+    // Функция для перехода на страницу "Создать игрока"
+    function showCreatePlayer() {
+        window.location.href = "playerCreate.html"; // Укажите нужный URL для страницы создания игрока
+    }
+
+    // Функции для перехода на другие страницы
+    function showAllNews() {
+        window.location.href = "showNews.html";
+    }
+
+    function showCreateNews() {
+        window.location.href = "createNews.html";
+    }
+
+    function showCreateProduct() {
+        window.location.href = "createProduct.html";
+    }
+
+    function showCategoryProduct() {
+        window.location.href = "showProduct.html";
+    }
+
+</script>
+
+</body>
+</html>

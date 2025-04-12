@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Подробности новости | Flamenco CF</title>
+  <link rel="stylesheet" href="static/styles/style-exactnew.css" />
+  <link rel="icon" href="assets/logoflamenco.ico" />
+</head>
+<body>
+<header>
+  <a href="https://youtu.be/dQw4w9WgXcQ?si=g-C092dgSqNFv62h" target="_blank" class="logo">
+    <img src="assets/logoflamenco.png" alt="Лого клуба" class="logo-icon" />
+    Flamenco CF
+  </a>
+  <input type="checkbox" name="menu" id="menu" />
+  <label for="menu">|||</label>
+  <nav class="navbar">
+    <a href="news.html">Новости</a>
+    <a href="calendar.html">Календарь</a>
+    <a href="tickets.html">Билеты</a>
+    <a href="merch.html">Мерч</a>
+    <a href="about.html">О клубе</a>
+    <a href="basket.html">Корзина</a>
+    <a href="Login.html">Личный кабинет</a>
+  </nav>
+</header>
+
+<main>
+  <article id="news-detail-container">
+    <!-- Данные новости будут вставляться сюда через JavaScript -->
+  </article>
+</main>
+
+<script>
+  const apiUrl = 'http://localhost:8080/api/news';
+  const urlParams = new URLSearchParams(window.location.search);
+  const newsId = urlParams.get('id');
+
+  // Функция для загрузки подробностей новости
+  async function fetchNewsDetails() {
+    const response = await fetch(`${apiUrl}/${newsId}`, { credentials: 'include' });
+    if (response.ok) {
+      const news = await response.json();
+      const newsDetailContainer = document.getElementById('news-detail-container');
+
+      // Запрашиваем изображение по правильному ID изображения
+      fetchImage(news.images.id).then(imageUrl => {
+        newsDetailContainer.innerHTML = `
+                  <h2>${news.heading}</h2>
+                  <div class="news-image">
+                    <img src="${imageUrl}" alt="Фото новости ${news.id}" />
+                  </div>
+                  <div class="news-content">
+                    <p>${news.description}</p>
+                  </div>
+              `;
+      });
+    } else {
+      alert('Ошибка при загрузке новости');
+    }
+  }
+
+  // Функция для получения изображения по ID изображения
+  async function fetchImage(imageId) {
+    const imageUrl = `http://localhost:8080/api/image/${imageId}`;
+    const response = await fetch(imageUrl, { credentials: 'include' });
+    if (response.ok) {
+      const imageBase64 = await response.json();
+      return `data:image/jpeg;base64,${imageBase64[0]}`;
+    } else {
+      return 'https://via.placeholder.com/800'; // Заглушка, если изображение не найдено
+    }
+  }
+
+  // Загружаем подробности новости при загрузке страницы
+  window.onload = fetchNewsDetails;
+</script>
+</body>
+</html>

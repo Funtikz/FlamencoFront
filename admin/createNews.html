@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Управление новостями</title>
+    <style>
+        /* Основной стиль */
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            display: flex;
+            background-color: #f4f7fa;
+        }
+
+        /* Боковое меню */
+        nav {
+            width: 240px;
+            background-color: #2c3e50;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            padding-top: 30px;
+            padding-left: 20px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        nav a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 15px 25px;
+            font-size: 18px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            background-color: #16a085;
+        }
+
+        /* Основной контент */
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        /* Форма создания новости */
+        #create-form input, #create-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #create-form button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #create-form button:hover {
+            background-color: #2980b9;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="javascript:void(0);" onclick="showAllNews()">Просмотр всех новостей</a>
+    <a href="javascript:void(0);" onclick="showCreateNews()">Создать новость</a>
+    <a href="javascript:void(0);" onclick="showAllPlayers()">Просмотр всех игроков</a>
+    <a href="javascript:void(0);" onclick="showCreatePlayer()">Создать игрока</a>
+    <a href="javascript:void(0);" onclick="showCreateProduct()">Создать продукт</a>
+    <a href="javascript:void(0);" onclick="showCategoryProduct()">Посмотреть продукты</a>
+</nav>
+
+<!-- Основной контент -->
+<div class="content">
+    <h1>Управление новостями</h1>
+
+    <!-- Форма создания новости -->
+    <div id="create-form">
+        <h2>Создание новости</h2>
+        <input type="text" id="create-heading" placeholder="Заголовок" required>
+        <textarea id="create-description" placeholder="Описание" required></textarea>
+        <input type="file" id="create-image" accept="image/*">
+        <button onclick="createNews()">Создать</button>
+    </div>
+</div>
+
+<script>
+    const apiUrl = 'http://localhost:8080/api/news';
+
+    // Показать форму создания новости
+    function showCreateForm() {
+        document.getElementById('create-form').style.display = 'block';
+    }
+
+    async function createNews() {
+        const heading = document.getElementById('create-heading').value;
+        const description = document.getElementById('create-description').value;
+        const image = document.getElementById('create-image').files[0]; // Предположим, что есть элемент с id="create-image" для выбора файла
+
+        const formData = new FormData();
+        formData.append('heading', heading);
+        formData.append('description', description);
+        formData.append('image', image);  // Добавляем изображение
+
+        try {
+            const response = await fetch('http://localhost:8080/api/news', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include',  // передаем куки с запросом
+            });
+
+            if (response.ok) {
+                alert('Новость создана');
+            } else {
+                alert('Ошибка при создании новости');
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+        }
+    }
+
+    // Очистить форму
+    function clearCreateForm() {
+        document.getElementById('create-heading').value = '';
+        document.getElementById('create-description').value = '';
+        document.getElementById('create-image').value = '';
+    }
+
+    // Функция для перехода на страницу "Все игроки"
+    function showAllPlayers() {
+        window.location.href = "showPlayer.html"; // Укажите нужный URL для страницы с полным списком игроков
+    }
+
+    // Функция для перехода на страницу "Создать игрока"
+    function showCreatePlayer() {
+        window.location.href = "playerCreate.html"; // Укажите нужный URL для страницы создания игрока
+    }
+
+    // Функции для перехода на другие страницы
+    function showAllNews() {
+        window.location.href = "showNews.html";
+    }
+
+    function showCreateNews() {
+        window.location.href = "createNews.html";
+    }
+
+    function showCreateProduct() {
+        window.location.href = "createProduct.html";
+    }
+
+    function showCategoryProduct() {
+        window.location.href = "showProduct.html";
+    }
+
+
+
+</script>
+
+</body>
+</html>

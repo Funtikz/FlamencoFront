@@ -4,10 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flamenco CF</title>
-    <link
-      rel="icon"
-      href="assets/logoflamenco.ico"
-    />
+    <link rel="icon" href="assets/logoflamenco.ico" />
     <link rel="stylesheet" href="static/styles/registration.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -34,10 +31,10 @@
     <div class="form-container">
         <h1>РЕГИСТРАЦИЯ</h1>
         <div class="tabs">
-            <a href="Login.html" class="tab">ПО НОМЕРУ ТЕЛЕФОНА</a>
+            <a href="Login.html" class="tab">ВОЙТИ</a>
             <a href="#" class="tab active">РЕГИСТРАЦИЯ</a>
         </div>
-        <form>
+        <form id="registrationForm">
             <div class="input-group">
                 <input type="text" id="surname" placeholder="Фамилия" class="form-input" required>
             </div>
@@ -64,62 +61,63 @@
     </div>
 </main>
 <script>
-   document.addEventListener("DOMContentLoaded", function () {
-    document.querySelector(".submit-btn").addEventListener("click", async function (event) {
-        event.preventDefault();
-        
-        const surname = document.getElementById("surname").value.trim();
-        const name = document.getElementById("name").value.trim();
-        const patronymic = document.getElementById("patronymic").value.trim();
-        const phone = document.getElementById("phone").value.trim();
-        const email = document.getElementById("email").value.trim();
-        const password = document.getElementById("password").value.trim();
-        const confirmPassword = document.getElementById("confirm-password").value.trim();
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelector("#registrationForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
 
-        if (!surname || !name || !patronymic || !phone || !email || !password || !confirmPassword) {
-            alert("Все поля должны быть заполнены");
-            return;
-        }
+            const form = event.target;
+            const surname = form.surname.value;
+            const name = form.name.value;
+            const patronymic = form.patronymic.value;
+            const phone = form.phone.value;
+            let email = form.email.value;
+            const password = form.password.value;
+            const confirmPassword = form["confirm-password"].value;
 
-        if (password !== confirmPassword) {
-            alert("Пароли не совпадают");
-            return;
-        }
-
-        const requestData = {
-            lastName: surname,
-            firstName: name,
-            phoneNumber: phone,
-            email: email,
-            password: password,
-            confirmPassword: confirmPassword,
-            roles: ["USER"]
-        };
-
-        try {
-            const response = await fetch("http://localhost:8080/api/auth/registration", {
-                method: "POST",
-                credentials: "include", 
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(requestData)
-            });
-
-            if (response.ok) {
-                alert("Регистрация успешна! Теперь вы можете войти в систему.");
-                window.location.href = "Login.html";
-            } else {
-                const errorData = await response.json();
-                alert(errorData.message || "Ошибка регистрации");
+            // Приводим домен email к нижнему регистру, если вдруг человек написал капсом
+            const atIndex = email.indexOf('@');
+            if (atIndex !== -1) {
+                const local = email.slice(0, atIndex);
+                const domain = email.slice(atIndex).toLowerCase(); // gmail.COM -> gmail.com
+                email = local + domain;
             }
-        } catch (error) {
-            console.error("Ошибка запроса:", error);
-            alert("Не удалось отправить запрос. Попробуйте позже.");
-        }
-    });
-});
 
+            const requestData = {
+                lastName: surname,
+                firstName: name,
+                phoneNumber: phone,
+                email,
+                password,
+                confirmPassword,
+                roles: ["USER"]
+            };
+
+            try {
+                const response = await fetch("http://localhost:8080/api/auth/registration", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (response.ok) {
+                    alert("Регистрация прошла успешно!");
+                    // Просто переходим на страницу входа
+                    window.location.href = "http://localhost:63343/flamenco/Login.html?_ijt=lpdioco80t2kah63hruprafftj&_ij_reload=RELOAD_ON_SAVE";
+                } else {
+                    const error = await response.json();
+                    alert(error.message || "Ошибка регистрации");
+                }
+            } catch (error) {
+                console.error("Ошибка запроса:", error);
+                alert("Ошибка сети. Попробуйте позже.");
+            }
+        });
+    });
 </script>
+
+
 </body>
 </html>

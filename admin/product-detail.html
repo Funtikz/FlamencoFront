@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Информация о товаре</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<h1>Информация о товаре</h1>
+
+<div class="product-detail" id="product-detail">
+    <div class="product-images" id="product-images">
+        <!-- Здесь будет отображаться слайдер изображений -->
+    </div>
+    <div class="product-info" id="product-info"></div>
+    <div class="action-buttons">
+        <button class="update-btn" id="updateBtn">Редактировать</button>
+        <button class="delete-btn" id="deleteBtn">Удалить</button>
+    </div>
+</div>
+
+<div class="edit-form" id="edit-form">
+    <h2>Редактировать товар</h2>
+    <form id="updateForm">
+        <input type="text" id="productName" placeholder="Название продукта" required />
+
+        <textarea id="productDescription" placeholder="Описание продукта" required></textarea>
+
+        <input type="number" id="productPrice" placeholder="Цена" required step="0.01" />
+
+        <!-- Поле для скидки -->
+        <input type="number" id="productDiscount" placeholder="Скидка (%)" required />
+
+        <select id="product-type" onchange="toggleSizeField()">
+            <option value="Футболки">Футболки</option>
+            <option value="Кепки">Кепки</option>
+            <option value="Худи">Худи</option>
+            <option value="Шопперы">Шопперы</option>
+            <option value="Шарфы">Шарфы</option>
+            <option value="Значки">Значки</option>
+            <option value="Брелки">Брелки</option>
+            <option value="Постеры">Постеры</option>
+        </select>
+
+        <!-- Поле для добавления нескольких размеров -->
+        <div id="size-field" class="size-select">
+            <label for="product-sizes">Размеры:</label>
+            <div id="product-sizes" class="size-list">
+                <!-- Размеры будут добавляться сюда -->
+            </div>
+            <button type="button" onclick="addSizeField()">Добавить размер</button>
+        </div>
+
+        <input type="file" id="productImage" accept="image/*" multiple />
+
+        <button type="submit">Сохранить изменения</button>
+    </form>
+</div>
+
+<script>
+    // Маппинг категорий
+    const categoryMap = {
+        "Футболки": "T_SHIRTS",
+        "Кепки": "CAPS",
+        "Худи": "HOODIES",
+        "Шопперы": "SHOPPERS",
+        "Шарфы": "SCARFS",
+        "Значки": "BADGES",
+        "Брелки": "TRINKETS",
+        "Постеры": "POSTERS"
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get("id");
+
+    const productInfo = document.getElementById('product-info');
+    const productImages = document.getElementById('product-images');
+    const editForm = document.getElementById('edit-form');
+
+    // Загрузка информации о товаре
+    const loadProductData = () => {
+        fetch(`http://localhost:8080/api/products/${productId}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+            .then(res => res.json())
+            .then(product => {
+                if (!product) {
+                    productInfo.innerHTML = "<p>Не удалось загрузить данные о товаре.</p>";
+                    return;
+                }
+
+                productInfo.innerHTML = `
+                <h2>${product.name}</h2>
+                <p>${product.description || "Описание не доступно"}</p>
+                <div class="price">${product.discountedPrice ?? product.originalPrice} ₽</div>
+            `;
+
+                fetch(`http://localhost:8080/api/products/${productId}/images`, {
+                    method: 'GET',
+                    credentials: 'include'
+                })
+                    .then(res => res.json())
+                    .then(images => {
+                        if (Array.isArray(images) && images.length > 0) {
+                            productImages.innerHTML = `
+                            <div class="slider-container">
+                                <div class="slider-images">
+                                    ${images.map((image, index) => {
+                                let imageSrc = image;
+                                if (image && image.indexOf("data:image/") === -1) {
+                                    imageSrc = `data:image/jpeg;base64,${image}`;
+                                }
+                                return `<img src="${imageSrc}" alt="${product.name}" class="${index === 0 ? 'active' : ''}">`;
+                            }).join("")}
+                                </div>
+                                <button class="slider-btn prev-btn" onclick="moveSlide(-1)">&#10094;</button>
+                                <button class="slider-btn next-btn" onclick="moveSlide(1)">&#10095;</button>
+                            </div>`;
+                        } else {
+                            productImages.innerHTML = "<p>Изображения отсутствуют.</p>";
+                        }
+                    });
+
+                // Заполняем форму
+                document.getElementById('productName').value = product.name;
+                document.getElementById('productDescription').value = product.description;
+                document.getElementById('productPrice').value = product.discountedPrice ?? product.originalPrice;
+                document.getElementById('productImage').value = product.imageUrl || '';
+            }).catch(err => {
+            console.error(err);
+            productInfo.innerHTML = "<p>Ошибка при загрузке данных о товаре.</p>";
+        });
+    };
+
+    const updateProduct = (event) => {
+        event.preventDefault();
+
+        // Получаем значения из формы
+        const productName = document.getElementById('productName').value;
+        const productDescription = document.getElementById('productDescription').value;
+        const productPrice = parseFloat(document.getElementById('productPrice').value);
+        const productDiscount = parseInt(document.getElementById('productDiscount').value, 10);
+        const productType = document.getElementById('product-type').value;
+        const productId = new URLSearchParams(window.location.search).get("id");
+
+        // Формируем объект данных товара
+        const productData = {
+            name: productName,
+            description: productDescription,
+            productType: categoryMap[productType], // Маппинг категории
+            originalPrice: productPrice,
+            discountPercentage: productDiscount,
+            variants: []
+        };
+
+        // Собираем данные о размерах и количестве
+        const sizeItems = document.querySelectorAll('.size-item');
+        sizeItems.forEach(item => {
+            const size = item.querySelector('select').value;
+            const quantity = item.querySelector('input').value;
+            productData.variants.push({ size, quantity: parseInt(quantity, 10) });
+        });
+
+        // Формируем FormData для отправки
+        const formData = new FormData();
+        formData.append('productData', JSON.stringify(productData));  // Сериализуем объект productData в строку JSON
+
+        // Добавляем изображения
+        const images = document.getElementById('productImage').files;
+        for (let i = 0; i < images.length; i++) {
+            formData.append('images', images[i]);  // Добавляем изображения в formData
+        }
+
+        // Логируем данные, которые будут отправлены
+        console.log('Отправка запроса на сервер:');
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
+
+        // Отправляем запрос
+        fetch(`http://localhost:8080/api/products/${productId}`, {
+            method: 'PUT',
+            headers: {
+                'Accept': 'application/json', // Устанавливаем заголовок
+            },
+            credentials: 'include',
+            body: formData // Отправляем FormData с данными и изображениями
+        })
+            .then(response => {
+                if (response.ok) {
+                    alert('Товар успешно обновлен!');
+                    window.location.reload(); // Перезагружаем страницу или делаем редирект
+                } else {
+                    alert('Ошибка при обновлении товара');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert('Ошибка при обновлении товара');
+            });
+    };
+
+
+
+    // Удаление товара
+    const deleteProduct = () => {
+        fetch(`http://localhost:8080/api/products/${productId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        })
+            .then(res => {
+                if (res.ok) {
+                    alert('Товар удален');
+                    window.location.href = 'showProduct.html';
+                } else {
+                    alert('Ошибка при удалении товара');
+                }
+            })
+            .catch(err => {
+                console.error('Ошибка при удалении товара:', err);
+                alert('Ошибка при удалении товара');
+            });
+    };
+
+    let sizeCounter = 0;
+
+    function addSizeField() {
+        const productType = document.getElementById('product-type').value;
+
+        if (productType === "Футболки" || productType === "Худи" || productType === "Кепки") {
+            const sizeList = document.getElementById('product-sizes');
+            const sizeItem = document.createElement('div');
+            sizeItem.classList.add('size-item');
+            sizeItem.setAttribute('id', `size-item-${sizeCounter}`);
+
+            sizeItem.innerHTML = `
+                <select id="product-size-${sizeCounter}">
+                    <option value="XS">XS</option>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                    <option value="XXL">XXL</option>
+                </select>
+                <input type="number" id="product-quantity-${sizeCounter}" placeholder="Количество" required>
+                <button type="button" onclick="removeSizeField(${sizeCounter})">Удалить</button>
+            `;
+            sizeList.appendChild(sizeItem);
+            sizeCounter++;
+        }
+    }
+
+    function removeSizeField(index) {
+        const sizeItem = document.getElementById(`size-item-${index}`);
+        sizeItem.remove();
+    }
+
+    // Функция для обработки изменения типа товара
+    function toggleSizeField() {
+        const productType = document.getElementById('product-type').value;
+        const sizeField = document.getElementById('size-field');
+
+        if (productType === 'Футболки' || productType === 'Худи' || productType === 'Кепки') {
+            sizeField.style.display = 'block';
+        } else {
+            sizeField.style.display = 'none';
+        }
+    }
+
+    let currentSlideIndex = 0; // Индекс текущего изображения
+
+    // Функция для переключения слайдов
+    function moveSlide(step) {
+        const images = document.querySelectorAll('.slider-images img');
+        const totalSlides = images.length;
+
+        // Убираем активный класс у текущего изображения
+        images[currentSlideIndex].classList.remove('active');
+
+        // Вычисляем новый индекс слайдера
+        currentSlideIndex = (currentSlideIndex + step + totalSlides) % totalSlides;
+
+        // Добавляем активный класс на новое изображение
+        images[currentSlideIndex].classList.add('active');
+    }
+
+    document.getElementById('updateBtn').addEventListener('click', () => {
+        loadProductData();
+        editForm.classList.add('show');
+    });
+
+    document.getElementById('deleteBtn').addEventListener('click', deleteProduct);
+    document.getElementById('updateForm').addEventListener('submit', updateProduct);
+
+
+    // Начальная загрузка
+    loadProductData();
+</script>
+
+</body>
+</html>

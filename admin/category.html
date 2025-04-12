@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Продукты категории</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            display: flex;
+            background-color: #f4f7fa;
+        }
+
+        /* Основной контент */
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        /* Список продуктов */
+        .product-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .product-item {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .product-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .product-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .product-item p {
+            font-size: 18px;
+            color: #34495e;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="javascript:void(0);" onclick="showAllNews()">Просмотр всех новостей</a>
+    <a href="javascript:void(0);" onclick="showCreateNews()">Создать новость</a>
+    <a href="javascript:void(0);" onclick="showAllPlayers()">Просмотр всех игроков</a>
+    <a href="javascript:void(0);" onclick="showCreatePlayer()">Создать игрока</a>
+    <a href="javascript:void(0);" onclick="showCreateProduct()">Создать продукт</a>
+    <a href="javascript:void(0);" onclick="showCategoryProduct()">Посмотреть продукты</a>
+</nav>
+
+<!-- Основной контент -->
+<div class="content">
+    <h1>Продукты категории</h1>
+
+    <!-- Список продуктов -->
+    <div id="product-list" class="product-list"></div>
+</div>
+
+<script>
+    const apiUrl = 'http://localhost:8080/api/products/get-by-category';
+
+    // Получаем параметр categoryId из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoryId = urlParams.get('id');
+
+    // Функция для получения продуктов категории
+    async function fetchProductsByCategory() {
+        const response = await fetch(`${apiUrl}?categoryId=${categoryId}`, {
+            credentials: 'include',
+        });
+
+        if (response.ok) {
+            const productList = await response.json();
+            const productContainer = document.getElementById('product-list');
+            productContainer.innerHTML = ''; // Очистить список перед добавлением новых элементов
+
+            productList.forEach(product => {
+                const productItem = document.createElement('div');
+                productItem.className = 'product-item';
+                productItem.innerHTML = `
+                    <img src="${product.image}" alt="${product.name}">
+                    <p>${product.name}</p>
+                    <p>${product.price} ₽</p>
+                `;
+                productContainer.appendChild(productItem);
+            });
+        } else {
+            alert('Ошибка при загрузке продуктов');
+        }
+    }
+    // Функция для перехода на страницу "Все игроки"
+    function showAllPlayers() {
+        window.location.href = "showPlayer.html"; // Укажите нужный URL для страницы с полным списком игроков
+    }
+
+    // Функция для перехода на страницу "Создать игрока"
+    function showCreatePlayer() {
+        window.location.href = "playerCreate.html"; // Укажите нужный URL для страницы создания игрока
+    }
+
+    // Функции для перехода на другие страницы
+    function showAllNews() {
+        window.location.href = "showNews.html";
+    }
+
+    function showCreateNews() {
+        window.location.href = "createNews.html";
+    }
+
+    function showCreateProduct() {
+        window.location.href = "createProduct.html";
+    }
+
+    function showCategoryProduct() {
+        window.location.href = "showProduct.html";
+    }
+
+
+    // Загрузить продукты сразу при загрузке страницы
+    fetchProductsByCategory();
+</script>
+
+</body>
+</html>

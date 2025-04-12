@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Товар | Flamenco CF</title>
+    <link rel="stylesheet" href="../static/styles/adding.css" />
+    <link rel="icon" href="../assets/logoflamenco.ico" />
+    <style>
+        body {
+            background-color: #121212;
+            color: #f0f0f0;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 40px;
+            gap: 40px;
+        }
+
+        .slider-container {
+            max-width: 400px;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            height: auto;
+            border-radius: 15px;
+            object-fit: cover;
+            display: none;
+            cursor: pointer;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        .slider-buttons {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        .slider-buttons button {
+            pointer-events: all;
+            background: rgba(255, 105, 180, 0.6);
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .details-container {
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .details-container h2 {
+            font-size: 28px;
+            margin: 0;
+        }
+
+        .size-selection label {
+            margin-right: 15px;
+            font-size: 16px;
+        }
+
+        .price {
+            font-size: 22px;
+            color: #ffd700;
+        }
+
+        .description {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #ccc;
+        }
+
+        .add-to-cart {
+            padding: 12px 24px;
+            background-color: #ff69b4;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .add-to-cart:hover {
+            background-color: #ff85c1;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .quantity-controls button {
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .quantity-controls button:hover {
+            background-color: #ff85c1;
+        }
+
+        .quantity-controls input {
+            width: 50px;
+            text-align: center;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 12px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <a href="https://youtu.be/dQw4w9WgXcQ?si=g-C092dgSqNFv62h" target="_blank" class="logo">
+        <img src="../assets/logoflamenco.png" alt="Лого клуба" class="logo-icon" />
+        Flamenco CF
+    </a>
+    <input type="checkbox" name="menu" id="menu" />
+    <label for="menu">|||</label>
+    <nav class="navbar">
+        <a href="news.html">Новости</a>
+        <a href="calendar.html">Календарь</a>
+        <a href="tickets.html">Билеты</a>
+        <a href="merch.html">Мерч</a>
+        <a href="about.html">О клубе</a>
+        <a href="basket.html">Корзина</a>
+        <a href="Login.html">Личный кабинет</a>
+    </nav>
+</header>
+
+<div class="container" id="product-detail">
+    <!-- Данные будут подгружены динамически -->
+</div>
+
+<div class="modal" id="imageModal" onclick="hideModal()">
+    <img id="modalImage" src="" alt="Изображение в полном размере" />
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('id');
+
+    async function loadProductDetails(productId) {
+        try {
+            const [productRes, imageRes] = await Promise.all([
+                fetch(`http://localhost:8080/api/products/${productId}`, { credentials: 'include' }),
+                fetch(`http://localhost:8080/api/products/${productId}/images`, { credentials: 'include' })
+            ]);
+
+            const product = await productRes.json();
+            const images = await imageRes.json();
+
+            const imageTags = images.length > 0
+                ? images.map((base64, i) =>
+                    `<img src="data:image/jpeg;base64,${base64}" class="slide ${i === 0 ? 'active' : ''}" onclick="showModal(this.src)" />`)
+                : [`<img src="../assets/default-product.jpg" class="slide active" />`];
+
+            const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+                .map(size => `<label><input type="radio" name="size" value="${size}"> ${size}</label>`)
+                .join('');
+
+            const container = document.getElementById('product-detail');
+            container.innerHTML = `
+        <div class="slider-container">
+          ${imageTags.join('')}
+          ${images.length > 1 ? `
+            <div class="slider-buttons">
+              <button onclick="changeSlide(-1)">‹</button>
+              <button onclick="changeSlide(1)">›</button>
+            </div>
+          ` : ''}
+        </div>
+        <div class="details-container">
+          <h2>${product.name}</h2>
+          <div class="size-selection">${sizeOptions}</div>
+          <div class="price">Цена: ${product.discountedPrice} рублей</div>
+          <p class="description">${product.description || 'Описание отсутствует.'}</p>
+
+          <div class="quantity-controls">
+            <button onclick="changeQuantity(-1)">−</button>
+            <input type="number" id="quantity" value="1" min="1" />
+            <button onclick="changeQuantity(1)">+</button>
+          </div>
+
+          <button class="add-to-cart" onclick="addToCart(${product.id})">Добавить в корзину</button>
+        </div>
+      `;
+
+            let currentSlide = 0;
+            window.changeSlide = function(step) {
+                const slides = document.querySelectorAll('.slide');
+                slides[currentSlide].classList.remove('active');
+                currentSlide = (currentSlide + step + slides.length) % slides.length;
+                slides[currentSlide].classList.add('active');
+            };
+        } catch (err) {
+            console.error('Ошибка загрузки товара:', err);
+            document.getElementById('product-detail').innerHTML = '<p>Ошибка загрузки товара.</p>';
+        }
+    }
+
+    function changeQuantity(delta) {
+        const input = document.getElementById('quantity');
+        let value = parseInt(input.value) || 1;
+        value = Math.max(1, value + delta);
+        input.value = value;
+    }
+
+    async function addToCart(productId) {
+        const size = document.querySelector('input[name="size"]:checked')?.value;
+        const quantity = parseInt(document.getElementById('quantity').value) || 1;
+
+        if (!size) {
+            alert('Пожалуйста, выберите размер.');
+            return;
+        }
+
+        // Запросим данные о товаре с API
+        try {
+            const response = await fetch(`http://localhost:8080/api/products/${productId}`, {
+                credentials: 'include'  // Добавляем куки в запрос
+            });
+            const product = await response.json();
+
+            // Найдем подходящий вариант для выбранного размера
+            const variant = product.variants.find(v => v.size === size);
+
+            if (!variant) {
+                alert('Размер не найден.');
+                return;
+            }
+
+            // Создадим объект для передачи в запросе
+            const productData = {
+                id: product.id,
+                name: product.name,
+                description: product.description,
+                originalPrice: product.originalPrice,
+                discountPercentage: product.discountPercentage,
+                discountedPrice: product.discountedPrice,
+                productType: product.productType,
+                variants: product.variants
+            };
+
+            // Отправим POST-запрос на сервер для добавления в корзину с куки
+            const addToCartResponse = await fetch(`http://localhost:8080/api/cart/add-to-cart/${quantity}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',  // Добавляем куки в запрос
+                body: JSON.stringify(productData), // Отправляем данные товара
+            });
+
+            if (addToCartResponse.ok) {
+                alert(`Товар ${product.name} (${size}) x ${quantity} добавлен в корзину.`);
+            } else {
+                alert('Ошибка добавления в корзину.');
+            }
+        } catch (err) {
+            console.error('Ошибка загрузки товара:', err);
+            alert('Ошибка при добавлении товара в корзину.');
+        }
+    }
+
+
+    function showModal(src) {
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        modalImg.src = src;
+        modal.classList.add('show');
+    }
+
+    function hideModal() {
+        document.getElementById('imageModal').classList.remove('show');
+    }
+
+    if (productId) {
+        loadProductDetails(productId);
+    } else {
+        document.getElementById('product-detail').innerHTML = '<p>Товар не найден.</p>';
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Создание игрока</title>
+    <style>
+        /* Основной стиль */
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            display: flex;
+            background-color: #f4f7fa;
+        }
+
+        /* Боковое меню */
+        nav {
+            width: 240px;
+            background-color: #2c3e50;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            padding-top: 30px;
+            padding-left: 20px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        nav a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 15px 25px;
+            font-size: 18px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            background-color: #16a085;
+        }
+
+        /* Основной контент */
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        /* Форма создания игрока */
+        #create-form input, #create-form textarea, #create-form select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #create-form button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #create-form button:hover {
+            background-color: #2980b9;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 40px;
+        }
+
+        /* Скрыть поле позиции */
+        #create-playerPosition-container {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="javascript:void(0);" onclick="showAllNews()">Просмотр всех новостей</a>
+    <a href="javascript:void(0);" onclick="showCreateNews()">Создать новость</a>
+    <a href="javascript:void(0);" onclick="showAllPlayers()">Просмотр всех игроков</a>
+    <a href="javascript:void(0);" onclick="showCreatePlayer()">Создать игрока</a>
+    <a href="javascript:void(0);" onclick="showCreateProduct()">Создать продукт</a>
+    <a href="javascript:void(0);" onclick="showCategoryProduct()">Посмотреть продукты</a>
+</nav>
+<!-- Основной контент -->
+<div class="content">
+    <h1>Управление игроками</h1>
+
+    <!-- Форма создания игрока -->
+    <div id="create-form">
+        <h2>Создание игрока</h2>
+        <input type="text" id="create-firstname" placeholder="Имя" required>
+        <input type="text" id="create-lastname" placeholder="Фамилия" required>
+
+        <!-- Роль -->
+        <select id="create-role" onchange="togglePlayerPositionField()">
+            <option value="FOOTBALLER">Футболист</option>
+            <option value="CLUB_PRESIDENT">Президент клуба</option>
+            <option value="DIRECTOR_OF_FOOTBALL">Директор по футболу</option>
+            <option value="SPORTING_DIRECTOR">Спортивный директор</option>
+            <option value="HEAD_COACH">Главный тренер</option>
+            <option value="ASSISTANT_COACH">Ассистент тренера</option>
+            <option value="GOALKEEPING_COACH">Тренер вратарей</option>
+            <option value="FITNESS_COACH">Тренер по физподготовке</option>
+            <option value="PHYSIOTHERAPIST">Физиотерапевт</option>
+            <option value="TEAM_DOCTOR">Врач команды</option>
+            <option value="SCOUT">Скаут</option>
+            <option value="ANALYST">Аналитик</option>
+            <option value="CLUB_SECRETARY">Секретарь клуба</option>
+            <option value="MEDIA_OFFICER">Медийный офицер</option>
+            <option value="MARKETING_MANAGER">Менеджер по маркетингу</option>
+            <option value="ACADEMY_DIRECTOR">Директор академии</option>
+            <option value="KIT_MANAGER">Менеджер по экипировке</option>
+        </select>
+
+        <!-- Контейнер для позиции игрока, будет показываться только для "Футболист" -->
+        <div id="create-playerPosition-container">
+            <select id="create-playerPosition">
+                <option value="GOALKEEPER">Вратарь</option>
+                <option value="CENTER_BACK">Центральный защитник</option>
+                <option value="LEFT_BACK">Левый защитник</option>
+                <option value="RIGHT_BACK">Правый защитник</option>
+                <option value="SWEEPER">Либеро</option>
+                <option value="WING_BACK_LEFT">Левый крайний защитник</option>
+                <option value="WING_BACK_RIGHT">Правый крайний защитник</option>
+                <option value="DEFENSIVE_MIDFIELDER">Опорный полузащитник</option>
+                <option value="CENTRAL_MIDFIELDER">Центральный полузащитник</option>
+                <option value="ATTACKING_MIDFIELDER">Атакующий полузащитник</option>
+                <option value="LEFT_MIDFIELDER">Левый полузащитник</option>
+                <option value="RIGHT_MIDFIELDER">Правый полузащитник</option>
+                <option value="STRIKER">Нападающий</option>
+                <option value="CENTER_FORWARD">Центральный форвард</option>
+                <option value="SECOND_STRIKER">Второй нападающий</option>
+                <option value="LEFT_WINGER">Левый вингер</option>
+                <option value="RIGHT_WINGER">Правый вингер</option>
+            </select>
+        </div>
+
+        <input type="file" id="create-image" accept="image/*" required>
+        <button onclick="createPlayer()">Создать</button>
+    </div>
+</div>
+
+<script>
+    const apiUrl = 'http://localhost:8080/api/players';
+
+    // Функция для показа/скрытия поля позиции в зависимости от выбранной роли
+    function togglePlayerPositionField() {
+        const role = document.getElementById('create-role').value;
+        const playerPositionContainer = document.getElementById('create-playerPosition-container');
+        if (role === 'FOOTBALLER') {
+            playerPositionContainer.style.display = 'block'; // Показываем поле позиции
+        } else {
+            playerPositionContainer.style.display = 'none'; // Скрываем поле позиции
+        }
+    }
+
+
+    async function createPlayer() {
+        const firstname = document.getElementById('create-firstname').value;
+        const lastname = document.getElementById('create-lastname').value;
+        const role = document.getElementById('create-role').value;
+        const image = document.getElementById('create-image').files[0];
+
+        // Создаем форму
+        const formData = new FormData();
+        formData.append('firstname', firstname);
+        formData.append('lastname', lastname);
+        formData.append('role', role);
+        formData.append('image', image);
+
+        // Добавляем позицию игрока только если роль FOOTBALLER
+        if (role === 'FOOTBALLER') {
+            const playerPosition = document.getElementById('create-playerPosition').value;
+            formData.append('playerPosition', playerPosition);
+        }
+
+        try {
+            const response = await fetch('http://localhost:8080/api/players', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                alert('Игрок успешно создан');
+            } else {
+                const errorText = await response.text();
+                console.error('Ошибка:', errorText);
+                alert('Ошибка при создании игрока: ' + errorText);
+            }
+        } catch (error) {
+            console.error('Ошибка при отправке запроса:', error);
+            alert('Сбой при отправке запроса');
+        }
+    }
+
+
+    async function createPlayer() {
+        const firstname = document.getElementById('create-firstname').value;
+        const lastname = document.getElementById('create-lastname').value;
+        const role = document.getElementById('create-role').value;
+        const playerPosition = document.getElementById('create-playerPosition').value;
+        const image = document.getElementById('create-image').files[0];
+
+        const formData = new FormData();
+        formData.append('firstname', firstname);
+        formData.append('lastname', lastname);
+        formData.append('role', role);
+        if (role === 'FOOTBALLER') {
+            formData.append('playerPosition', playerPosition);
+        }
+        formData.append('image', image);
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                body: formData,
+                credentials: 'include',
+            });
+
+            if (response.ok) {
+                alert('Игрок успешно создан');
+            } else {
+                alert('Ошибка при создании игрока');
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+        }
+    }
+
+
+
+    // Инициализация скрытия/показа поля для позиции при загрузке страницы
+    window.onload = togglePlayerPositionField;
+
+    // Функция для перехода на страницу "Все игроки"
+    function showAllPlayers() {
+        window.location.href = "showPlayer.html"; // Укажите нужный URL для страницы с полным списком игроков
+    }
+
+    // Функция для перехода на страницу "Создать игрока"
+    function showCreatePlayer() {
+        window.location.href = "playerCreate.html"; // Укажите нужный URL для страницы создания игрока
+    }
+
+    // Функции для перехода на другие страницы
+    function showAllNews() {
+        window.location.href = "showNews.html";
+    }
+
+    function showCreateNews() {
+        window.location.href = "createNews.html";
+    }
+
+    function showCreateProduct() {
+        window.location.href = "createProduct.html";
+    }
+
+    function showCategoryProduct() {
+        window.location.href = "showProduct.html";
+    }
+
+
+
+</script>
+
+</body>
+</html>
