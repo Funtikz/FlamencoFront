@@ -192,49 +192,83 @@
 
     async function loadProductDetails(productId) {
         try {
-            const [productRes, imageRes] = await Promise.all([
+            const [productRes, imageRes, cartRes] = await Promise.all([
                 fetch(`http://localhost:8080/api/products/${productId}`, { credentials: 'include' }),
-                fetch(`http://localhost:8080/api/products/${productId}/images`, { credentials: 'include' })
+                fetch(`http://localhost:8080/api/products/${productId}/images`, { credentials: 'include' }),
+                fetch(`http://localhost:8080/api/cart/get-my-items`, { credentials: 'include' }),
             ]);
 
             const product = await productRes.json();
             const images = await imageRes.json();
+            const cartItems = await cartRes.json();
+
+            const cartItemMap = {};
+            cartItems.forEach(item => {
+                if (!cartItemMap[item.productId]) {
+                    cartItemMap[item.productId] = {};
+                }
+                if (!cartItemMap[item.productId][item.clothingSize]) {
+                    cartItemMap[item.productId][item.clothingSize] = 0;
+                }
+                cartItemMap[item.productId][item.clothingSize] += item.quantity;
+            });
 
             const imageTags = images.length > 0
                 ? images.map((base64, i) =>
                     `<img src="data:image/jpeg;base64,${base64}" class="slide ${i === 0 ? 'active' : ''}" onclick="showModal(this.src)" />`)
                 : [`<img src="../assets/default-product.jpg" class="slide active" />`];
 
-            const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
-                .map(size => `<label><input type="radio" name="size" value="${size}"> ${size}</label>`)
+            const sizeOptions = product.variants
+                .map(variant => {
+                    const inCart = cartItemMap[product.id]?.[variant.size] || 0;
+                    const remaining = variant.quantity - inCart;
+
+                    return `
+                    <label>
+                        <input type="radio" name="size" value="${variant.size}" data-available="${remaining}" ${remaining <= 0 ? 'disabled' : ''}>
+                        ${variant.size} (осталось: ${remaining}${inCart > 0 ? `, в корзине: ${inCart}` : ''})
+                    </label>
+                `;
+                })
                 .join('');
 
             const container = document.getElementById('product-detail');
             container.innerHTML = `
-        <div class="slider-container">
-          ${imageTags.join('')}
-          ${images.length > 1 ? `
-            <div class="slider-buttons">
-              <button onclick="changeSlide(-1)">‹</button>
-              <button onclick="changeSlide(1)">›</button>
-            </div>
-          ` : ''}
+    <div class="slider-container">
+      ${imageTags.join('')}
+      ${images.length > 1 ? `
+        <div class="slider-buttons">
+          <button onclick="changeSlide(-1)">‹</button>
+          <button onclick="changeSlide(1)">›</button>
         </div>
-        <div class="details-container">
-          <h2>${product.name}</h2>
-          <div class="size-selection">${sizeOptions}</div>
-          <div class="price">Цена: ${product.discountedPrice} рублей</div>
-          <p class="description">${product.description || 'Описание отсутствует.'}</p>
+      ` : ''}
+    </div>
+    <div class="details-container">
+      <h2>${product.name}</h2>
+      <div class="size-selection">${sizeOptions}</div>
+      <div class="price">Цена: ${product.discountedPrice} рублей</div>
+      <p class="description">${product.description || 'Описание отсутствует.'}</p>
 
-          <div class="quantity-controls">
-            <button onclick="changeQuantity(-1)">−</button>
-            <input type="number" id="quantity" value="1" min="1" />
-            <button onclick="changeQuantity(1)">+</button>
-          </div>
+      <div class="quantity-controls">
+        <button onclick="changeQuantity(-1)">−</button>
+        <input type="number" id="quantity" value="1" min="1" />
+        <button onclick="changeQuantity(1)">+</button>
+      </div>
 
-          <button class="add-to-cart" onclick="addToCart(${product.id})">Добавить в корзину</button>
-        </div>
-      `;
+      <button class="add-to-cart" onclick="addToCart(${product.id})">Добавить в корзину</button>
+    </div>
+  `;
+
+            document.querySelectorAll('input[name="size"]').forEach(radio => {
+                radio.addEventListener('change', () => {
+                    const available = parseInt(radio.dataset.available);
+                    const quantityInput = document.getElementById('quantity');
+                    quantityInput.max = available;
+                    if (parseInt(quantityInput.value) > available) {
+                        quantityInput.value = available;
+                    }
+                });
+            });
 
             let currentSlide = 0;
             window.changeSlide = function(step) {
@@ -252,7 +286,8 @@
     function changeQuantity(delta) {
         const input = document.getElementById('quantity');
         let value = parseInt(input.value) || 1;
-        value = Math.max(1, value + delta);
+        const max = parseInt(input.max) || Infinity;
+        value = Math.min(max, Math.max(1, value + delta));
         input.value = value;
     }
 
@@ -265,14 +300,10 @@
             return;
         }
 
-        // Запросим данные о товаре с API
         try {
-            const response = await fetch(`http://localhost:8080/api/products/${productId}`, {
-                credentials: 'include'  // Добавляем куки в запрос
-            });
+            const response = await fetch(`http://localhost:8080/api/products/${productId}`, { credentials: 'include' });
             const product = await response.json();
 
-            // Найдем подходящий вариант для выбранного размера
             const variant = product.variants.find(v => v.size === size);
 
             if (!variant) {
@@ -280,7 +311,6 @@
                 return;
             }
 
-            // Создадим объект для передачи в запросе
             const productData = {
                 id: product.id,
                 name: product.name,
@@ -292,18 +322,16 @@
                 variants: product.variants
             };
 
-            // Отправим POST-запрос на сервер для добавления в корзину с куки
-            const addToCartResponse = await fetch(`http://localhost:8080/api/cart/add-to-cart/${quantity}`, {
+            const addToCartResponse = await fetch(`http://localhost:8080/api/cart/add-to-cart/${quantity}/${size}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',  // Добавляем куки в запрос
-                body: JSON.stringify(productData), // Отправляем данные товара
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(productData),
             });
 
             if (addToCartResponse.ok) {
                 alert(`Товар ${product.name} (${size}) x ${quantity} добавлен в корзину.`);
+                window.location.reload();
             } else {
                 alert('Ошибка добавления в корзину.');
             }
@@ -312,7 +340,6 @@
             alert('Ошибка при добавлении товара в корзину.');
         }
     }
-
 
     function showModal(src) {
         const modal = document.getElementById('imageModal');

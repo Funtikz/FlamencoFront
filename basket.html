@@ -1,33 +1,333 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Flamenco CF</title>
-        <link rel="stylesheet" href="static/styles/style-basket.css">
-        <link rel="icon" href="C:\Users\user\Desktop\MyProjects\Flamenco\assets\logoflamenco.ico">
-    </head>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flamenco CF - Корзина</title>
+    <link rel="stylesheet" href="static/styles/style-basket.css">
+    <link rel="icon" href="assets/logoflamenco.ico">
+</head>
 <body>
-    <header>
-        <a href="https://youtu.be/dQw4w9WgXcQ?si=g-C092dgSqNFv62h" target="_blank" class="logo">
-            <img src="C:\Users\user\Desktop\MyProjects\Flamenco\assets\logoflamenco.png" alt="Лого клуба" class="logo-icon">
-            Flamenco CF
-        </a>
-        <input type="checkbox" name="menu" id="menu">
-        <label for="menu">|||</label>
-        <nav class="navbar">
-            <a href="news.html">Новости</a>
-            <a href="calendar.html">Календарь</a>
-            <a href="tickets.html">Билеты</a>
-            <a href="merch.html">Мерч</a>
-            <a href="about.html">О клубе</a>
-            <a href="basket.html">Корзина</a>
-            <a href="Login.html">Личный кабинет</a>
-        </nav>
-    </header>
-    <div class="container">
-        <h1>Корзина пуста</h1>
-        <a href="C:\Users\user\Desktop\MyProjects\Flamenco\merch.html" class="button">Давайте это исправим</a>
+<header>
+    <a href="https://youtu.be/dQw4w9WgXcQ?si=g-C092dgSqNFv62h" target="_blank" class="logo">
+        <img src="assets/logoflamenco.png" alt="Лого клуба" class="logo-icon">
+        Flamenco CF
+    </a>
+    <input type="checkbox" name="menu" id="menu">
+    <label for="menu">|||</label>
+    <nav class="navbar">
+        <a href="news.html">Новости</a>
+        <a href="calendar.html">Календарь</a>
+        <a href="tickets.html">Билеты</a>
+        <a href="merch.html">Мерч</a>
+        <a href="about.html">О клубе</a>
+        <a href="basket.html">Корзина</a>
+        <a href="Login.html">Личный кабинет</a>
+    </nav>
+</header>
+
+<div class="container" id="cart-container">
+    <h1>Корзина</h1>
+    <div id="cart-items"></div>
+    <div id="empty-cart" style="display: none;">
+        <h2>Корзина пуста</h2>
+        <a href="merch.html" class="button">Давайте это исправим</a>
     </div>
+    <div id="cart-total"></div>  <!-- Новый блок для отображения общей стоимости корзины -->
+</div>
+
+<script>
+    // Функция для получения информации о товаре с учетом размера и количества на складе
+    async function checkProductAvailability(productId, clothingSize) {
+        try {
+            const response = await fetch(`http://localhost:8080/api/products/${productId}`, { credentials: 'include' });
+            const product = await response.json();
+
+            const variant = product.variants.find(v => v.size === clothingSize);
+
+            if (variant) {
+                return variant.quantity;
+            } else {
+                throw new Error(`Размер ${clothingSize} не найден для этого товара`);
+            }
+        } catch (err) {
+            console.error('Ошибка при проверке наличия товара:', err);
+            return 0;
+        }
+    }
+
+    async function loadProductImage(productId) {
+        try {
+            const imageRes = await fetch(`http://localhost:8080/api/products/${productId}/images`, { credentials: 'include' });
+            const images = await imageRes.json();
+            return images.length > 0 ? images[0] : null;
+        } catch (err) {
+            console.error('Ошибка при загрузке изображений:', err);
+            return null;
+        }
+    }
+
+    async function changeItemQuantity(productId, change, clothingSize) {
+        try {
+            const availableQuantity = await checkProductAvailability(productId, clothingSize);
+
+            const cartItemsElement = document.getElementById('cart-items');
+            const itemElement = cartItemsElement.querySelector(`[data-product-id="${productId}"][data-clothing-size="${clothingSize}"]`);
+            const quantityElement = itemElement.querySelector('.quantity-control span');
+
+            let newQuantity = parseInt(quantityElement.textContent) + change;
+
+            if (newQuantity < 1) {
+                await removeItemFromCart(productId, clothingSize);
+                return;
+            }
+
+            if (newQuantity > availableQuantity) {
+                alert('Недостаточно товара на складе для добавления в корзину');
+                return;
+            }
+
+            quantityElement.textContent = newQuantity;
+
+            const response = await fetch('http://localhost:8080/api/cart/change-quantity', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    productId: productId,
+                    quantity: change,
+                    clothingSize: clothingSize
+                }),
+                credentials: 'include'
+            });
+
+            const result = await response.text();
+            if (result === "Товар успешно удален или уменьшен из корзины") {
+                loadCartItems();
+            } else {
+                alert(result);
+            }
+        } catch (err) {
+            console.error('Ошибка при изменении количества товара:', err);
+        }
+    }
+
+    async function removeItemFromCart(productId, clothingSize) {
+        try {
+            const response = await fetch('http://localhost:8080/api/cart/change-quantity', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    productId: productId,
+                    quantity: -1,
+                    clothingSize: clothingSize
+                }),
+                credentials: 'include'
+            });
+
+            const result = await response.text();
+            if (result === "Товар успешно удален или уменьшен из корзины") {
+                loadCartItems();
+            } else {
+                alert(result);
+            }
+        } catch (err) {
+            console.error('Ошибка при удалении товара:', err);
+        }
+    }
+
+    async function loadCartItems() {
+        try {
+            const response = await fetch('http://localhost:8080/api/cart/get-my-items', { credentials: 'include' });
+            const cartItems = await response.json();
+
+            if (cartItems.length === 0) {
+                document.getElementById('cart-items').style.display = 'none';
+                document.getElementById('empty-cart').style.display = 'block';
+            } else {
+                document.getElementById('cart-items').style.display = 'block';
+                document.getElementById('empty-cart').style.display = 'none';
+
+                const cartItemsHtml = await Promise.all(cartItems.map(async (item) => {
+                    const imageBase64 = await loadProductImage(item.productId);
+                    const imageSrc = imageBase64 ? `data:image/jpeg;base64,${imageBase64}` : '../assets/default-product.jpg';
+
+                    return `
+    <div class="cart-item" data-product-id="${item.productId}" data-clothing-size="${item.clothingSize}">
+        <div class="cart-item-image">
+            <img src="${imageSrc}" alt="${item.name}" />
+        </div>
+        <div class="cart-item-details">
+            <h3>${item.name}</h3>
+            <p>Размер: ${item.clothingSize}</p>
+            <p>Цена: ${item.price} рублей</p>
+            <div class="quantity-control">
+                <button onclick="changeItemQuantity(${item.productId}, -1, '${item.clothingSize}')">-</button>
+                <span>${item.quantity}</span>
+                <button onclick="changeItemQuantity(${item.productId}, 1, '${item.clothingSize}')">+</button>
+            </div>
+            <a href="product-detail.html?id=${item.productId}" class="view-product-btn">Перейти к товару</a>
+        </div>
+    </div>
+`;
+
+                }));
+
+                document.getElementById('cart-items').innerHTML = cartItemsHtml.join('');
+                loadCartTotal(); // Загружаем общую стоимость корзины
+            }
+        } catch (err) {
+            console.error('Ошибка загрузки корзины:', err);
+        }
+    }
+
+    // Функция для получения общей стоимости корзины
+    async function loadCartTotal() {
+        try {
+            const response = await fetch('http://localhost:8080/api/cart/get-cart-total-price', { credentials: 'include' });
+            const totalPrice = await response.json();
+            document.getElementById('cart-total').innerHTML = `Общая стоимость: ${totalPrice} рублей`;
+        } catch (err) {
+            console.error('Ошибка при загрузке общей стоимости корзины:', err);
+        }
+    }
+
+    loadCartItems();
+</script>
+
+<style>
+    body {
+        background-color: #121212;
+        color: #f0f0f0;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .container {
+        padding: 40px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .cart-item {
+        display: flex;
+        align-items: center;
+        background-color: #1a1a1a;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        transition: transform 0.3s ease;
+    }
+
+    .cart-item-image img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-right: 15px;
+    }
+
+    .cart-item-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .cart-item-details h3 {
+        margin: 0;
+        font-size: 16px;
+        color: #ffd700;
+    }
+
+    .cart-item-details p {
+        margin: 4px 0;
+        color: #ccc;
+        font-size: 14px;
+    }
+
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        margin-top: 10px;
+    }
+
+    .quantity-control button {
+        padding: 5px 10px;
+        background-color: #ff69b4;
+        color: white;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .quantity-control button:hover {
+        background-color: #ff85c1;
+    }
+
+    .quantity-control span {
+        margin: 0 10px;
+        font-size: 16px;
+        color: #fff;
+    }
+
+    .button {
+        padding: 10px 20px;
+        background-color: #ff69b4;
+        color: white;
+        font-size: 16px;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: background 0.3s ease;
+    }
+
+    .button:hover {
+        background-color: #ff85c1;
+    }
+
+    #empty-cart {
+        text-align: center;
+        padding: 40px;
+        background-color: #333;
+        border-radius: 8px;
+    }
+
+    .view-product-btn {
+        margin-top: 10px;
+        padding: 6px 12px;
+        background-color: #ff69b4;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        text-align: center;
+        display: inline-block;
+        font-size: 12px;
+        transition: background 0.3s ease;
+    }
+
+    .view-product-btn:hover {
+        background-color: #ff85c1;
+    }
+
+    #cart-total {
+        margin-top: 20px;
+        background-color: #2d2d2d;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: right;
+        font-size: 18px;
+        color: #ffd700;
+    }
+
+    #cart-total span {
+        font-weight: bold;
+        color: #ff69b4;
+    }
+</style>
+
 </body>
 </html>
